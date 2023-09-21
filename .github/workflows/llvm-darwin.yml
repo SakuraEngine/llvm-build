@@ -88,7 +88,7 @@ jobs:
         
         echo "SOURCE_DIR=${{ github.workspace }}/src" >> "$GITHUB_ENV"
         echo "BUILD_DIR=./build" >> "$GITHUB_ENV"
-        echo "INSTALL_DIR=./llvm" >> "$GITHUB_ENV"
+        echo "INSTALL_DIR=/llvm" >> "$GITHUB_ENV"
 
     - name: Setup CMake
       id: setup_cmake
