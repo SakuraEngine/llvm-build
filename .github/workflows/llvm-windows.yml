@@ -1,5 +1,5 @@
-name: LLVM Build
-run-name: Build LLVM for ${{inputs.INPUT_LLVM_VER}}
+name: LLVM Build Windows
+run-name: Build LLVM ${{inputs.INPUT_LLVM_VER}} for Windows
 on:
   workflow_dispatch:
     inputs:
@@ -36,7 +36,7 @@ on:
 
 jobs:
   llvm-build:
-    name: llvm-${{github.event.inputs.INPUT_LLVM_VER}}-${{matrix.toolchain}}-${{matrix.arch}}-${{matrix.crt}}-${{matrix.cfg}}
+    name: llvm-windows-${{github.event.inputs.INPUT_LLVM_VER}}-${{matrix.toolchain}}-${{matrix.arch}}-${{matrix.crt}}-${{matrix.cfg}}
     runs-on: windows-2022
 
     strategy:
@@ -92,7 +92,7 @@ jobs:
           exit -4
         )
 
-        set RELEASE_NAME=llvm-${{env.LLVM_VER}}-${{matrix.toolchain}}-${{matrix.arch}}-${{matrix.crt}}-${{matrix.cfg}}
+        set RELEASE_NAME=llvm-windows-${{env.LLVM_VER}}-${{matrix.toolchain}}-${{matrix.arch}}-${{matrix.crt}}-${{matrix.cfg}}
         set RELEASE_FILE=C:\%RELEASE_NAME%.7z
         set RELEASE_BODY_FILE=${{ github.workspace }}\release.md
 
