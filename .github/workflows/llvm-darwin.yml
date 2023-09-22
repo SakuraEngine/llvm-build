@@ -184,7 +184,6 @@ jobs:
 
         echo "::group::Package"
         7z a -t7z -mx9 -md128m "$RELEASE_FILE" "$INSTALL_DIR/*"
-        if not exist $RELEASE_FILE exit -7
         echo "::endgroup::"
 
         echo "::group::Generate Release Info"
