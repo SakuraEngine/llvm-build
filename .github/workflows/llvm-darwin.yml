@@ -188,6 +188,7 @@ jobs:
 
         echo "::group::Generate Release Info"
 
+        touch $RELEASE_BODY_FILE
         echo "^| Build Option ^| Value ^|" >> $RELEASE_BODY_FILE
         echo "^|-^|-^|" >> $RELEASE_BODY_FILE
         echo "^| LLVM_VER ^| $LLVM_VER ^|" >> $RELEASE_BODY_FILE
@@ -208,6 +209,6 @@ jobs:
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       with:
-        tag_name: llvm-${{env.LLVM_VER}}
+        tag_name: llvm-darwin-${{env.LLVM_VER}}
         body_path: $RELEASE_BODY_FILE
         files: ${{env.RELEASE_FILE}}
