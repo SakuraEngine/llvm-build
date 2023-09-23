@@ -197,7 +197,6 @@ jobs:
         echo "^| LLVM_ENABLE_RUNTIMES ^| "$LLVM_ENABLE_RUNTIMES" ^|" >> $RELEASE_BODY_FILE
         echo "^| LLVM_TARGETS_TO_BUILD ^| "$LLVM_TARGETS_TO_BUILD" ^|" >> $RELEASE_BODY_FILE
 
-        type $RELEASE_BODY_FILE
         echo "::endgroup::"
 
         exit 0
