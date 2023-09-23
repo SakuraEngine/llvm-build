@@ -209,5 +209,4 @@ jobs:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       with:
         tag_name: llvm-darwin-${{env.LLVM_VER}}
-        body_path: $RELEASE_BODY_FILE
         files: ${{env.RELEASE_FILE}}
