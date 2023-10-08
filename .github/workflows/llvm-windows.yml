@@ -53,6 +53,7 @@ jobs:
         cfg:
           - release
           - minsizerel
+          - relwithdebinfo
 
     env:
       LLVM_VER: ${{github.event.inputs.INPUT_LLVM_VER}}
