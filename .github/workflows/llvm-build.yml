@@ -43,16 +43,15 @@ jobs:
       fail-fast: true
       matrix:
         toolchain:
-          - msvc17
+          - msvc
         arch:
-          - x86
           - x64
         crt:
           - md
           - mt
         cfg:
           - release
-          - minsizerel
+          - relwithdebinfo
 
     env:
       LLVM_VER: ${{github.event.inputs.INPUT_LLVM_VER}}
