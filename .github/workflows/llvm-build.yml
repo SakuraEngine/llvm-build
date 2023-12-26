@@ -52,7 +52,6 @@ jobs:
         cfg:
           - release
           - relwithdebinfo
-          - debug
 
     env:
       LLVM_VER: ${{github.event.inputs.INPUT_LLVM_VER}}
