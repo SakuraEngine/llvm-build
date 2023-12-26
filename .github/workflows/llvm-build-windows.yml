@@ -1,4 +1,4 @@
-name: LLVM Build
+name: LLVM Build Windows
 run-name: Build LLVM for ${{inputs.INPUT_LLVM_VER}}
 on:
   workflow_dispatch:
@@ -52,7 +52,6 @@ jobs:
         cfg:
           - release
           - relwithdebinfo
-          - debug
 
     env:
       LLVM_VER: ${{github.event.inputs.INPUT_LLVM_VER}}

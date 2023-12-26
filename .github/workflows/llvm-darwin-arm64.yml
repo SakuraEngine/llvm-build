@@ -1,4 +1,4 @@
-name: LLVM Build Darwin
+name: LLVM Build Darwin Arm64
 run-name: Build LLVM ${{inputs.INPUT_LLVM_VER}} for Darwin
 on:
   workflow_dispatch:
@@ -37,7 +37,7 @@ on:
 jobs:
   llvm-build:
     name: llvm-darwin-${{github.event.inputs.INPUT_LLVM_VER}}-${{matrix.toolchain}}-${{matrix.arch}}-${{matrix.cfg}}
-    runs-on: macos-12
+    runs-on: flyci-macos-large-latest-m1
 
     strategy:
       fail-fast: true
@@ -45,7 +45,6 @@ jobs:
         toolchain:
           - clang
         arch:
-          - x86_64
           - arm64
         cfg:
           - release
