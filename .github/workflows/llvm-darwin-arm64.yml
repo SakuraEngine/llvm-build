@@ -1,0 +1,216 @@
+name: LLVM Build Darwin Arm64
+run-name: Build LLVM ${{inputs.INPUT_LLVM_VER}} for Darwin
+on:
+  workflow_dispatch:
+    inputs:
+      INPUT_LLVM_VER:
+        description: 'LLVM package version'
+        required: true
+        type: string
+        default: ""
+      INPUT_LLVM_REF:
+        description: 'LLVM repo tag or ref'
+        required: true
+        type: string
+        default: ""
+      INPUT_LLVM_ENABLE_PROJECTS:
+        description: 'LLVM_ENABLE_PROJECTS'
+        required: false
+        type: string
+        default: "clang;lld;clang-tools-extra"
+      INPUT_LLVM_ENABLE_RUNTIMES:
+        description: 'LLVM_ENABLE_RUNTIMES'
+        required: false
+        type: string
+        default: ""
+      INPUT_LLVM_TARGETS_TO_BUILD:
+        description: 'LLVM_TARGETS_TO_BUILD'
+        required: false
+        type: string
+        default: "all"
+      INPUT_CMAKE_ADDITIONAL_CONFIG_ARGS:
+        description: 'Additional CMake configure params'
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  llvm-build:
+    name: llvm-darwin-${{github.event.inputs.INPUT_LLVM_VER}}-${{matrix.toolchain}}-${{matrix.arch}}-${{matrix.cfg}}
+    runs-on: flyci-macos-large-latest-m1
+
+    strategy:
+      fail-fast: true
+      matrix:
+        toolchain:
+          - clang
+        arch:
+          - arm64
+        cfg:
+          - release
+          - minsizerel
+
+    env:
+      LLVM_VER: ${{github.event.inputs.INPUT_LLVM_VER}}
+      LLVM_REF: ${{github.event.inputs.INPUT_LLVM_REF}}
+      LLVM_ENABLE_PROJECTS: ${{github.event.inputs.INPUT_LLVM_ENABLE_PROJECTS}}
+      LLVM_ENABLE_RUNTIMES: ${{github.event.inputs.INPUT_LLVM_ENABLE_RUNTIMES}}
+      LLVM_TARGETS_TO_BUILD: ${{github.event.inputs.INPUT_LLVM_TARGETS_TO_BUILD}}
+      CMAKE_ADDITIONAL_CONFIG_ARGS: ${{github.event.inputs.INPUT_CMAKE_ADDITIONAL_CONFIG_ARGS}}
+
+    steps:
+    - uses: seanmiddleditch/gha-setup-ninja@master
+    - name: Setup Environments
+      id: setup_env
+      env:
+        Arch: "${{matrix.arch}}"
+        Cfg: "${{matrix.cfg}}"
+      run: |
+        echo "Setup Environments"
+
+        if [ $Cfg = "debug" ]; then
+          echo "BUILD_CONFIG=Debug" >> "$GITHUB_ENV"
+        elif [ $Cfg = "release" ]; then
+          echo "BUILD_CONFIG=Release" >> "$GITHUB_ENV"
+        elif [ $Cfg = "relwithdebinfo" ]; then
+          echo "BUILD_CONFIG=RelWithDebInfo" >> "$GITHUB_ENV"
+        elif [ $Cfg = "minsizerel" ]; then
+          echo "BUILD_CONFIG=MinSizeRel" >> "$GITHUB_ENV"
+        else
+            echo "unknown config: $Cfg."
+            exit -4
+        fi
+        
+        echo "RELEASE_NAME=llvm-darwin-${{env.LLVM_VER}}-${{matrix.toolchain}}-${{matrix.arch}}-${{matrix.cfg}}" >> "$GITHUB_ENV"
+        echo "RELEASE_FILE=./llvm-darwin-${{env.LLVM_VER}}-${{matrix.toolchain}}-${{matrix.arch}}-${{matrix.cfg}}.7z" >> "$GITHUB_ENV"
+        echo "RELEASE_BODY_FILE=${{ github.workspace }}/release.md" >> "$GITHUB_ENV"
+        
+        echo "SOURCE_DIR=${{ github.workspace }}/src" >> "$GITHUB_ENV"
+        echo "BUILD_DIR=./build" >> "$GITHUB_ENV"
+        echo "INSTALL_DIR=/Users/runner/work/llvm-install" >> "$GITHUB_ENV"
+
+    - name: Setup CMake
+      id: setup_cmake
+      env:
+        Arch: "${{matrix.arch}}"
+        Cfg: "${{matrix.cfg}}"
+      run: |
+        echo "Setup CMake"
+
+        CMAKE_CONFIG_ARGS="-DCMAKE_BUILD_TYPE:STRING=$BUILD_CONFIG"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DCMAKE_INSTALL_PREFIX:PATH=$INSTALL_DIR"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_ENABLE_PROJECTS:STRING=${{env.LLVM_ENABLE_PROJECTS}}"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_ENABLE_RUNTIMES:STRING=${{env.LLVM_ENABLE_RUNTIMES}}"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_TARGETS_TO_BUILD:STRING=${{env.LLVM_TARGETS_TO_BUILD}}"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_OPTIMIZED_TABLEGEN:BOOL=ON"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_ENABLE_ASSERTIONS:BOOL=OFF"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_ENABLE_BINDINGS:BOOL=OFF"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_ENABLE_LIBXML2:BOOL=OFF"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_ENABLE_ZLIB:BOOL=OFF"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_ENABLE_Z3_SOLVER:BOOL=OFF"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_BUILD_BENCHMARKS:BOOL=OFF"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_BUILD_DOCS:BOOL=OFF"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_BUILD_EXAMPLES:BOOL=OFF"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_BUILD_TESTS:BOOL=OFF"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_INCLUDE_BENCHMARKS:BOOL=OFF"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_INCLUDE_EXAMPLES:BOOL=OFF"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_INCLUDE_TESTS:BOOL=OFF"
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS -DLLVM_INCLUDE_GO_TESTS:BOOL=OFF"
+
+        CMAKE_ADDITIONAL_CONFIG_ARGS=${{env.CMAKE_ADDITIONAL_CONFIG_ARGS}}
+        CMAKE_CONFIG_ARGS="$CMAKE_CONFIG_ARGS $CMAKE_ADDITIONAL_CONFIG_ARGS"
+
+        echo "=================================================="
+        echo "LLVM_VER              : $LLVM_VER"
+        echo "LLVM_REF              : $LLVM_REF"
+        echo "LLVM_ENABLE_PROJECTS  : $LLVM_ENABLE_PROJECTS"
+        echo "LLVM_ENABLE_RUNTIMES  : $LLVM_ENABLE_RUNTIMES"
+        echo "LLVM_TARGETS_TO_BUILD : $LLVM_TARGETS_TO_BUILD"
+        echo "RELEASE_NAME          : $RELEASE_NAME"
+        echo "RELEASE_FILE          : $RELEASE_FILE"
+        echo "CMAKE_CONFIG_ARGS     : $CMAKE_CONFIG_ARGS"
+        echo "SOURCE_DIR            : $SOURCE_DIR"
+        echo "RELEASE_BODY_FILE     : $RELEASE_BODY_FILE"
+        echo "=================================================="
+
+        echo "RELEASE_NAME=$RELEASE_NAME" >> "$GITHUB_ENV"
+        echo "RELEASE_FILE=$RELEASE_FILE" >> "$GITHUB_ENV"
+        echo "RELEASE_BODY_FILE=$RELEASE_BODY_FILE" >> "$GITHUB_ENV"
+        echo "BUILD_DIR=$BUILD_DIR" >> "$GITHUB_ENV"
+        echo "INSTALL_DIR=$INSTALL_DIR" >> "$GITHUB_ENV"
+        echo "BUILD_CONFIG=$BUILD_CONFIG" >> "$GITHUB_ENV"
+        echo "CMAKE_CONFIG_ARGS=$CMAKE_CONFIG_ARGS" >> "$GITHUB_ENV"
+
+        exit 0
+
+    - name: Checkout Source
+      if: ${{ success() }} && ${{ !cancelled() }}
+      id: checkout_src
+      uses: actions/checkout@v3
+      with:
+        repository: 'llvm/llvm-project'
+        ref: '${{env.LLVM_REF}}'
+        path: 'src'
+
+    - name: Get LLVM SHA
+      if: ${{ success() }} && ${{ !cancelled() }}
+      id: get_llvm_hash
+      run: |
+        cd "$SOURCE_DIR"
+        commitHash="$(git rev-parse HEAD)"
+        commitHash=${commitHash:0:40}
+        echo "LLVM_REF_HASH=$commitHash"
+        echo "LLVM_REF_HASH=$commitHash" >> "$GITHUB_ENV"
+        exit 0
+
+    - name: Build
+      if: ${{ success() }} && ${{ !cancelled() }}
+      id: build_llvm
+      run: |
+        echo ":: Build LLVM"
+
+        echo "::group::Configure"
+        cmake -G Ninja -S "$SOURCE_DIR/llvm" -B "$BUILD_DIR" $CMAKE_CONFIG_ARGS || exit -6
+        echo "::endgroup::"
+
+        echo "::group::Build"
+        cmake --build "$BUILD_DIR" --config $BUILD_CONFIG || exit -7
+        echo "::endgroup::"
+
+        echo "::group::Install"
+        cmake --build "$BUILD_DIR" --target install || exit -8
+        echo "::endgroup::"
+
+        echo "::group::Package"
+        7z a -t7z -mx9 -md128m "$RELEASE_FILE" "$INSTALL_DIR/*"
+        echo "::endgroup::"
+
+        echo "::group::Generate Release Info"
+
+        touch $RELEASE_BODY_FILE
+        echo "^| Build Option ^| Value ^|" >> $RELEASE_BODY_FILE
+        echo "^|-^|-^|" >> $RELEASE_BODY_FILE
+        echo "^| LLVM_VER ^| $LLVM_VER ^|" >> $RELEASE_BODY_FILE
+        echo "^| LLVM_REF ^| [$LLVM_REF](https://github.com/llvm/llvm-project/tree/$LLVM_REF_HASH) ^|" >> $RELEASE_BODY_FILE
+        echo "^| LLVM_ENABLE_PROJECTS ^| "$LLVM_ENABLE_PROJECTS" ^|" >> $RELEASE_BODY_FILE
+        echo "^| LLVM_ENABLE_RUNTIMES ^| "$LLVM_ENABLE_RUNTIMES" ^|" >> $RELEASE_BODY_FILE
+        echo "^| LLVM_TARGETS_TO_BUILD ^| "$LLVM_TARGETS_TO_BUILD" ^|" >> $RELEASE_BODY_FILE
+
+        echo "::endgroup::"
+
+        exit 0
+
+    - name: Release
+      if: ${{ success() }} && ${{ !cancelled() }}
+      id: update_release
+      uses: Wandalen/wretry.action@master
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      with:
+        attempt_limit: 12
+        attempt_delay: 10000 ## 10s, 12 attempts = 120s
+        action: softprops/action-gh-release@v2
+        with: |
+          tag_name: llvm-darwin-${{env.LLVM_VER}}
+          body_path: ${{env.RELEASE_BODY_FILE}}
+          files: ${{env.RELEASE_FILE}}
