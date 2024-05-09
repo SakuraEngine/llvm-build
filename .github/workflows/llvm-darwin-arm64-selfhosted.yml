@@ -37,7 +37,7 @@ on:
 jobs:
   llvm-build:
     name: llvm-darwin-${{github.event.inputs.INPUT_LLVM_VER}}-${{matrix.toolchain}}-${{matrix.arch}}-${{matrix.cfg}}
-    runs-on: [ self-hosted, macos, arm64 ]
+    runs-on: [ self-hosted, macos, arm64, llvm-env ]
 
     strategy:
       fail-fast: true

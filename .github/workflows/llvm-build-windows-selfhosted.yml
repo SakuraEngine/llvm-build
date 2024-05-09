@@ -37,7 +37,7 @@ on:
 jobs:
   llvm-build:
     name: llvm-windows-${{github.event.inputs.INPUT_LLVM_VER}}-${{matrix.toolchain}}-${{matrix.arch}}-${{matrix.crt}}-${{matrix.cfg}}
-    runs-on: [ self-hosted, windows, x64, hyperv ]
+    runs-on: [ self-hosted, windows, x64, hyperv, llvm-env ]
 
     strategy:
       fail-fast: true
