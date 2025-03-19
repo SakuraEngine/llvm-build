@@ -37,7 +37,7 @@ on:
 jobs:
   llvm-build:
     name: llvm-darwin-${{github.event.inputs.INPUT_LLVM_VER}}-${{matrix.toolchain}}-${{matrix.arch}}-${{matrix.cfg}}
-    runs-on: flyci-macos-large-latest-m1
+    runs-on: macos-15
 
     strategy:
       fail-fast: true
